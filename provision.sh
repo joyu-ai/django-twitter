@@ -48,7 +48,6 @@ sudo mysql -u root << EOF
 EOF
 # fi
 
-
 # 如果想直接进入/vagrant路径下
 # 请输入vagrant ssh命令进入
 # 手动输入
