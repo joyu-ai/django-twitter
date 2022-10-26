@@ -6,6 +6,11 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         model = User
         fields = ['username', 'email']
 
+class UserSerializerForTweet(serializers.ModelSerializer): #不同的serializers满足不同的response的需求。
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
