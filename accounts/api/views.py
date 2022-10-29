@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from rest_framework import viewsets
+from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework import permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -14,7 +14,7 @@ from django.contrib.auth import (
     authenticate as django_authenticate,
 )
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(ModelViewSet):
     """
     API endpoint that allows users to be viewed or edited.
     """
@@ -22,7 +22,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class AccountViewSet(viewsets.ViewSet):
+class AccountViewSet(ViewSet):
     serializer_class = SignupSerializer
     @action(methods=['GET'], detail=False)
     def login_status(self, request):

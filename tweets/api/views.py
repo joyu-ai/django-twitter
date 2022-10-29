@@ -1,11 +1,11 @@
-from rest_framework import viewsets
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from tweets.api.serializers import TweetSerializer, TweetSerializerForCreate
 from tweets.models import Tweet
 
 
-class TweetViewSet(viewsets.GenericViewSet):
+class TweetViewSet(GenericViewSet):
     """
     API endpoint that allows users to create, list tweets
     """
