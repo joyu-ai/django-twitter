@@ -19,6 +19,7 @@ class Tweet(models.Model):
     class Meta:
         index_together = (('user', 'created_at'),)
         ordering = ('user', '-created_at')
+
     @property
     def hours_to_now(self):
         # datetime.now 不带时区信息，需要增加上 utc 的时区信息
