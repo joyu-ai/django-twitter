@@ -1,5 +1,4 @@
 # 这个admin就是Django自己的admin
-
 from django.contrib import admin
 from tweets.models import Tweet
 

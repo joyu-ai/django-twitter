@@ -1,9 +1,21 @@
 from django.test import TestCase as DjangoTestCase
 from django.contrib.auth.models import User
 from tweets.models import Tweet
+from rest_framework.test import APIClient
 
 
 class TestCase(DjangoTestCase):
+
+    @property
+    def anonymous_client(self):
+        # 因为anonymous_client 太常用了，就放到了 Testing -> testcase.py 里
+        # QuerySet 也有 cache，instance level 的 cache
+        # 避免同一个 instance 访问同一个数据两次时，产生重复计算
+        # 总结到 OneNote
+        if hasattr(self, '_anonymous_client'):
+            return self._anonymous_client
+        self._anonymous_client = APIClient()
+        return self._anonymous_client
 
     def create_user(self, username, email=None, password=None):
         if password is None:

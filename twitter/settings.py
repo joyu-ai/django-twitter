@@ -48,6 +48,7 @@ INSTALLED_APPS = [
         # 在accounts文件夹下，去掉了admin.py，加了apps.py。进行makemigrations。还是报错。
     'tweets', # 为什么之前的accounts没有加 - 应该是漏了。但是漏了好像也没影响。直接加又报错。
     'friendships',
+    'newsfeeds',
 ]
 
 REST_FRAMEWORK = {
