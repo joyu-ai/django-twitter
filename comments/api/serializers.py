@@ -44,3 +44,18 @@ class CommentSerializerForCreate(serializers.ModelSerializer):
             tweet_id=validated_data['tweet_id'],
             content=validated_data['content'],
         )
+
+
+class CommentSerializerForUpdate(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ('content',)
+        # 为什么 Update 没有写到 CommentSerializerForCreate 里，而是分开写
+        # 因为 Update 只允许用户更改 content，不可以改 tweet_id 和 user_id
+        # 合起来写是不对的
+
+    def update(self, instance, validated_data):
+        instance.content = validated_data['content'] # 这里的 validated_data 是哪里来
+        instance.save()
+        # update 方法要求 return 修改后的 instance 作为返回值
+        return instance
