@@ -36,20 +36,23 @@ class FriendshipSerializerForCreate(serializers.ModelSerializer):
             raise ValidationError({
                 'message': 'You cannot follow yourself',
             })
+
         # 这个父类会率先帮你检测掉
-        if Friendship.objects.filter(
-            from_user_id=attrs['from_user_id'],
-            to_user_id=attrs['to_user_id'],
-        ).exists():
-            raise ValidationError({
-                'message': 'You has already followed this user.'
-            })
-        return attrs
+        # if Friendship.objects.filter(
+        #     from_user_id=attrs['from_user_id'],
+        #     to_user_id=attrs['to_user_id'],
+        # ).exists():
+        #     raise ValidationError({
+        #         'message': 'You has already followed this user.'
+        #     })
 
         if not User.objects.filter(id=attrs['to_user_id']).exists(): # User 表单？
             raise ValidationError({
                 'message': 'You can not follow a non-exist user.'
             })
+
+        return attrs
+
     def create(self, validated_data):
         return Friendship.objects.create(
             from_user_id=validated_data['from_user_id'],
