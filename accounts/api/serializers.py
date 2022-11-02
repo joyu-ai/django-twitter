@@ -1,18 +1,26 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers, exceptions
 
+
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
         fields = ['username', 'email']
+
 
 class UserSerializerForTweet(serializers.ModelSerializer): #不同的serializers满足不同的response的需求。
     class Meta:
         model = User
         fields = ['id', 'username']
 
+
 class UserSerializerForFriendship(UserSerializerForTweet): #不同的serializers满足不同的response的需求。
     pass
+
+
+class UserSerializerForComment(UserSerializerForTweet): #不同的serializers满足不同的response的需求。
+    pass
+
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -24,6 +32,7 @@ class LoginSerializer(serializers.Serializer):
                 'username': 'User does not exist.'
             })
         return data
+
 
 class SignupSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=20, min_length=6)
