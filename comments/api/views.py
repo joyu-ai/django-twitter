@@ -8,6 +8,7 @@ from comments.api.serializers import (
     CommentSerializerForCreate,
     CommentSerializerForUpdate
 )
+from utils.decorators import required_params
 
 # 尽量不要继承ModelViewSet。他默认增删查改都可以做
 # 但实际上不是这样的。很多时候有很多权限问题
@@ -32,21 +33,23 @@ class CommentViewSet(viewsets.GenericViewSet):
             return [IsAuthenticated(), IsObjectOwner()] # 按顺序，一旦前面出错，后面就不检测了
         return [AllowAny()]
 
+    @required_params(params=['tweet_id'])
     def list(self, request, *args, **kwargs):
-        if 'tweet_id' not in request.query_params:
-            # return Response(
-            #     {
-            #         'message': 'missing tweet_id in request',
-            #         'success': False,
-            #     },
-            #     status=status.HTTP_400_BAD_REQUEST,
-            # )
-            # 另外一个风格也可以，省一个缩进，省两行
-            # 只有一个status时比较适合
-            return Response({
-                'message': 'missing tweet_id in request',
-                'success': False,
-            },status=status.HTTP_400_BAD_REQUEST,)
+        # 优化：用decorator
+        # if 'tweet_id' not in request.query_params:
+        #     # return Response(
+        #     #     {
+        #     #         'message': 'missing tweet_id in request',
+        #     #         'success': False,
+        #     #     },
+        #     #     status=status.HTTP_400_BAD_REQUEST,
+        #     # )
+        #     # 另外一个风格也可以，省一个缩进，省两行
+        #     # 只有一个status时比较适合
+        #     return Response({
+        #         'message': 'missing tweet_id in request',
+        #         'success': False,
+        #     },status=status.HTTP_400_BAD_REQUEST,)
 
         # # 可以如下写，也比较简洁
         # # 坏处是, 当筛选的条件变多时，就不简洁了
