@@ -14,6 +14,10 @@ class UserSerializerForTweet(serializers.ModelSerializer): #不同的serializers
         fields = ['id', 'username']
 
 
+class UserSerializerForLike(UserSerializerForTweet):
+    pass
+
+
 class UserSerializerForFriendship(UserSerializerForTweet): #不同的serializers满足不同的response的需求。
     pass
 

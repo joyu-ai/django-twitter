@@ -5,7 +5,7 @@ from rest_framework.viewsets import GenericViewSet
 from tweets.api.serializers import (
     TweetSerializer,
     TweetSerializerForCreate,
-    TweetSerializerWithComments,
+    TweetSerializerForDetail,
 )
 from tweets.models import Tweet
 from utils.decorators import required_params
@@ -26,7 +26,14 @@ class TweetViewSet(GenericViewSet):
         # <HOMEWORK 1> 通过某个 query 参数 with_all_comments 来决定是否需要带上所有 comments
         # <HOMEWORK 2> 通过某个 query 参数 with_preview_comments 来决定是否需要带上前三条 comments
         tweet = self.get_object()
-        return Response(TweetSerializerWithComments(tweet).data)
+        # return Response(
+        #     TweetSerializerForDetail(tweet, context={'request': request}).data,
+        # ) # 20.4 因为继承了 TweetSerializer 也要传 context
+        serializer = TweetSerializerForDetail(
+            tweet,
+            context={'request': request},
+        )
+        return Response(serializer.data)
 
     @required_params(params=['user_id'])
     def list(self, request, *args, **kwargs): # 只有加了view function，才会在api root页面看到链接。
@@ -48,7 +55,11 @@ class TweetViewSet(GenericViewSet):
         # 单纯的 user 索引是不够的
         user_id = request.query_params['user_id'] # user_id是一个字符串
         tweets = Tweet.objects.filter(user_id=user_id).order_by('-created_at') # 不需要转成int，支持str。
-        serializer = TweetSerializer(tweets, many=True) # return list of dict
+        serializer = TweetSerializer(
+            tweets,
+            context={'request': request}, # 20.4 扩展了功能，令狐习惯传整个 request
+            many=True,
+        ) # return list of dict
         # 一般来说 json 格式的 response 默认都要用 hash 的格式
         # 而不能用 list 的格式（约定俗成）
         return Response({'tweets': serializer.data})
@@ -70,4 +81,7 @@ class TweetViewSet(GenericViewSet):
         # save will trigger create method in TweetSerializerForCreate
         tweet = serializer.save()
         NewsFeedService.fanout_to_followers(tweet)
-        return Response(TweetSerializer(tweet).data, status=201) # 展示用的另一个serializer
+        return Response(
+            TweetSerializer(tweet, context={'request': request}).data,
+            status=201,
+        ) # 展示用的另一个serializer
