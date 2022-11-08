@@ -18,7 +18,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             'timestamp',
             'unread',
         )
-#
+
 # 不用加 recipient ，就是登录用户
 # 用到了 3 个 generic foreign keys
 # example 1：
@@ -32,3 +32,17 @@ class NotificationSerializer(serializers.ModelSerializer):
 #     verb = 点赞
 #     这样前端就可以去渲染了
 # action 令狐没想到例子
+
+class NotificationSerializerForUpdate(serializers.ModelSerializer):
+    # BooleanField 会自动兼容 true, false, "true", "false", "True", "1", "0"
+    # 等情况，并都转换为 python 的 boolean 类型的 True / False
+    unread = serializers.BooleanField()
+
+    class Meta:
+        model = Notification
+        fields = ('unread',)
+
+    def update(self, instance, validated_data):
+        instance.unread = validated_data['unread']
+        instance.save()
+        return instance
