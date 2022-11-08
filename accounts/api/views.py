@@ -82,6 +82,10 @@ class AccountViewSet(ViewSet):
             }, status=400)
 
         user = serializer.save()
+        # Create UserProfile object
+        # 也可以写在 save() aka SignupSerializer, 更好
+        # 尽可能的让 view 短
+        # user.profile
         django_login(request, user)
         return Response({
             'success': True,

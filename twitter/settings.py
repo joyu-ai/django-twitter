@@ -46,10 +46,12 @@ INSTALLED_APPS = [
     'notifications',
 
     # project apps/models
-    # 'accounts',
+    'accounts',
         # 在accounts文件夹下，去掉了admin.py，加了apps.py。还是报错。
         # 改回admin.py, 进行 makemigrations。还是报一样的错。
-        # 在accounts文件夹下，去掉了admin.py，加了apps.py。进行 makemigrations。还是报错。
+        # 在accounts文件夹下，去掉了admin.py，加了apps.py(但是加错了）。进行 makemigrations。还是报错。
+        # 到了 23.1 节时，加入。令狐：之前没 model 就没加，有 model 就要加进去了。makemigrations 报错
+        # 把 apps.py 改对了。TweetsConfig -> AccountsConfig
     'tweets', # 为什么之前的accounts没有加 - 应该是漏了。但是漏了好像也没影响。直接加又报错。
     'friendships',
     'newsfeeds',

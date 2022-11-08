@@ -67,4 +67,5 @@ class SignupSerializer(serializers.Serializer):
             email=email,
             password=password,
         )
+        user.profile
         return user
