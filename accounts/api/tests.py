@@ -1,5 +1,6 @@
 from accounts.models import UserProfile
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
 
@@ -8,6 +9,7 @@ LOGIN_URL = '/api/accounts/login/'
 LOGOUT_URL = '/api/accounts/logout/'
 SIGNUP_URL = '/api/accounts/signup/'
 LOGIN_STATUS_URL = '/api/accounts/login_status/'
+USER_PROFILE_DETAIL_URL = '/api/profiles/{}/'
 
 
 class AccountApiTests(TestCase):
@@ -60,7 +62,7 @@ class AccountApiTests(TestCase):
         })
         self.assertEqual(response.status_code, 201)
         self.assertNotEqual(response.data['user'], None)
-        self.assertEqual(response.data['user']['email'], 'admin@jiuzhang.com')
+        self.assertEqual(response.data['user']['id'], self.user.id)
         # 验证已经登录了
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], True)
@@ -134,3 +136,51 @@ class AccountApiTests(TestCase):
         # 验证用户已经登入
         response = self.client.get(LOGIN_STATUS_URL)
         self.assertEqual(response.data['has_logged_in'], True)
+
+
+class UserProfileAPITests(TestCase):
+
+    def test_update(self):
+        linghu, linghu_client = self.create_user_and_client('linghu')
+        p = linghu.profile
+        p.nickname = 'old nickname'
+        p.save()
+        url = USER_PROFILE_DETAIL_URL.format(p.id)
+
+        # anonymous user can not update profile
+        response = self.anonymous_client.put(url, {
+            'nickname': 'a new nickname',
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['detail'], 'Authentication credentials were not provided.')
+
+        # test can only be updated by user himself.
+        _, dongxie_client = self.create_user_and_client('dongxie')
+        response = dongxie_client.put(url, {
+            'nickname': 'a new nickname',
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['detail'], 'You do not have permission to access this object')
+        p.refresh_from_db()
+        self.assertEqual(p.nickname, 'old nickname')
+
+        # update nickname
+        response = linghu_client.put(url, {
+            'nickname': 'a new nickname',
+        })
+        self.assertEqual(response.status_code, 200)
+        p.refresh_from_db()
+        self.assertEqual(p.nickname, 'a new nickname')
+
+        # update avatar
+        response = linghu_client.put(url, {
+            'avatar': SimpleUploadedFile(
+                name='my-avatar.jpg',
+                content=str.encode('a fake image'),
+                content_type='image/jpeg',
+            ),
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual('my-avatar' in response.data['avatar'], True)
+        p.refresh_from_db()
+        self.assertIsNotNone(p.avatar)
