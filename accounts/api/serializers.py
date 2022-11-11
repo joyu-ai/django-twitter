@@ -1,3 +1,4 @@
+from accounts.models import UserProfile
 from django.contrib.auth.models import User
 from rest_framework import serializers, exceptions
 
@@ -5,24 +6,36 @@ from rest_framework import serializers, exceptions
 class UserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'email']
-
-
-class UserSerializerForTweet(serializers.ModelSerializer): #不同的serializers满足不同的response的需求。
-    class Meta:
-        model = User
         fields = ['id', 'username']
 
 
-class UserSerializerForLike(UserSerializerForTweet):
+class UserSerializerWithProfile(UserSerializer):
+    nickname = serializers.CharField(source='profile.nickname')
+    avatar_url = serializers.SerializerMethodField()
+
+    def get_avatar_url(self, obj):
+        if obj.profile.avatar:
+            return obj.profile.avatar.url
+        return None
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'nickname', 'avatar_url')
+
+
+class UserSerializerForTweet(UserSerializerWithProfile):
     pass
 
 
-class UserSerializerForFriendship(UserSerializerForTweet): #不同的serializers满足不同的response的需求。
+class UserSerializerForComment(UserSerializerWithProfile):
     pass
 
 
-class UserSerializerForComment(UserSerializerForTweet): #不同的serializers满足不同的response的需求。
+class UserSerializerForFriendship(UserSerializerWithProfile):
+    pass
+
+
+class UserSerializerForLike(UserSerializerWithProfile):
     pass
 
 
@@ -69,3 +82,10 @@ class SignupSerializer(serializers.Serializer):
         )
         user.profile
         return user
+
+
+class UserProfileSerializerForUpdate(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ('nickname', 'avatar')
+# 很简单，就只要定义下哪些项会被更新

@@ -1,4 +1,4 @@
-from comments.api.permissions import IsObjectOwner
+from utils.permissions import IsObjectOwner
 from comments.api.serializers import (
     CommentSerializer,
     CommentSerializerForCreate,
