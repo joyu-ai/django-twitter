@@ -9,6 +9,7 @@ from tweets.api.serializers import (
 )
 from tweets.models import Tweet
 from utils.decorators import required_params
+from utils.paginations import EndlessPagination
 
 class TweetViewSet(GenericViewSet):
     """
@@ -16,6 +17,7 @@ class TweetViewSet(GenericViewSet):
     """
     serializer_class = TweetSerializerForCreate
     queryset = Tweet.objects.all()
+    pagination_class = EndlessPagination
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:  # self.action 指调用的带request的函数
@@ -40,29 +42,15 @@ class TweetViewSet(GenericViewSet):
         """
         重载 list方法，不列出所有 tweets，必须要求指定 user_id 作为筛选条件。
         """
-        # 优化：下面两句用上面的 @required_params 取代
-        # if 'user_id' not in request.query_params:
-        #     return Response('missing user_id', status=400)
-        # 为什么定义 request_attr
-        # GET request.query_params
-        # POST request.data
-
-        # 这句查询会被翻译为
-        # select * from twitter_tweets
-        # where user_id = xxx
-        # order by create_at desc
-        # 这句 SQL 查询会用到 user 和 created_at 的联合索引
-        # 单纯的 user 索引是不够的
-        user_id = request.query_params['user_id'] # user_id是一个字符串
+        user_id = request.query_params['user_id']
         tweets = Tweet.objects.filter(user_id=user_id).order_by('-created_at') # 不需要转成int，支持str。
+        tweets = self.paginate_queryset(tweets)
         serializer = TweetSerializer(
             tweets,
-            context={'request': request}, # 20.4 扩展了功能，令狐习惯传整个 request
+            context={'request': request},
             many=True,
-        ) # return list of dict
-        # 一般来说 json 格式的 response 默认都要用 hash 的格式
-        # 而不能用 list 的格式（约定俗成）
-        return Response({'tweets': serializer.data})
+        )
+        return self.get_paginated_response(serializer.data)
 
     def create(self, request):
         """
