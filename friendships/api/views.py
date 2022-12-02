@@ -9,7 +9,7 @@ from friendships.api.serializers import (
     FriendshipSerializerForCreate,
 )
 from django.contrib.auth.models import User
-from utils.paginations import FriendshipPagination
+from friendships.api.paginations import FriendshipPagination
 
 
 class FriendshipViewSet(viewsets.GenericViewSet):
