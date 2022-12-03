@@ -182,6 +182,23 @@ AWS_S3_REGION_NAME = 'us-west-1'
 # - media 里使用户上传的数据文件，而不是代码
 MEDIA_ROOT = 'media/'
 
+# https://docs.djangoproject.com/en/3.1/topics/cache/
+# use `pip install python-memcached`
+# DO NOT pip install memcache or django-memcached
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+        'TIMEOUT': 86400,
+    },
+    'testing': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+        'TIMEOUT': 86400,
+        'KEY_PREFIX': 'testing',
+    },
+}
+
 # checkout https://www.neilwithdata.com/django-sql-logging
 # 只是用于开发。不应该上线，多少影响效率。
 # LOGGING = {
