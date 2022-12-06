@@ -9,7 +9,7 @@ from tweets.models import Tweet
 from tweets.services import TweetService
 
 class TweetSerializer(serializers.ModelSerializer):
-    user = UserSerializerForTweet() # used in fields
+    user = UserSerializerForTweet(source='cached_user') # used in fields
     comments_count = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     has_liked = serializers.SerializerMethodField()
