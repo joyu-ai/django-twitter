@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User # we use django model for user api
 from tweets.models import Tweet
+from utils.memcached_helper import MemcachedHelper
 
 
 class NewsFeed(models.Model):
@@ -21,3 +22,8 @@ class NewsFeed(models.Model):
 
     def __str__(self):
         return f'{self.created_at}  inbox of {self.user}: {self.tweet}'
+
+    @ property
+    def cached_tweet(self):
+        return MemcachedHelper.get_object_through_cache(Tweet, self.tweet_id)
+

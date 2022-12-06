@@ -7,7 +7,7 @@ from tweets.api.serializers import TweetSerializer
 # 这里不能传给 TweetSerializer
 # 要查 NewsFeedSerializer 是被谁用到的，传入那里
 class NewsFeedSerializer(serializers.ModelSerializer):
-    tweet = TweetSerializer()
+    tweet = TweetSerializer(source='cached_tweet')
 
     class Meta:
         model = NewsFeed
