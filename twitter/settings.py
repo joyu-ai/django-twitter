@@ -207,6 +207,7 @@ REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
 REDIS_DB = 0 if TESTING else 1
 REDIS_KEY_EXPIRE_TIME = 7 * 86400  # in seconds
+REDIS_LIST_LENGTH_LIMIT = 1000 if not TESTING else 20
 
 # checkout https://www.neilwithdata.com/django-sql-logging
 # 只是用于开发。不应该上线，多少影响效率。
