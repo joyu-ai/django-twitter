@@ -4,9 +4,10 @@ from django.db import models
 from django.db.models.signals import post_save, pre_delete
 from likes.models import Like
 from tweets.constants import TweetPhotoStatus, TWEET_PHOTO_STATUS_CHOICES
+from tweets.listeners import push_tweet_to_cache
+from utils.listeners import invalidate_object_cache
 from utils.memcached_helper import MemcachedHelper
 from utils.time_helpers import utc_now
-from utils.listeners import invalidate_object_cache
 
 
 
@@ -89,3 +90,4 @@ class TweetPhoto(models.Model):
 
 post_save.connect(invalidate_object_cache, sender=Tweet)
 pre_delete.connect(invalidate_object_cache, sender=Tweet)
+post_save.connect(push_tweet_to_cache, sender=Tweet)
