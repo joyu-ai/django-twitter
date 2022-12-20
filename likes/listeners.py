@@ -1,4 +1,4 @@
-from utils.listeners import invalidate_object_cache
+from utils.redis_helper import RedisHelper
 
 
 def incr_likes_count(sender, instance, created, **kwargs):
@@ -17,6 +17,8 @@ def incr_likes_count(sender, instance, created, **kwargs):
     # 因此这个操作不是原子操作，必须使用 update 语句才是原子操作
     # 方法一
     Tweet.objects.filter(id=instance.object_id).update(likes_count=F('likes_count') + 1)
+    tweet = instance.content_object
+    RedisHelper.incr_count(tweet, 'likes_count')
     # 方法二
     # tweet = instance.content_object
     # tweet.likes_count = F('likes_count') + 1
@@ -33,3 +35,5 @@ def decr_likes_count(sender, instance, **kwargs):
 
     # handle tweet likes cancel
     Tweet.objects.filter(id=instance.object_id).update(likes_count=F('likes_count') - 1)
+    tweet = instance.content_object
+    RedisHelper.decr_count(tweet, 'likes_count')
