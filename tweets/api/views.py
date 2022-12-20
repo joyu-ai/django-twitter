@@ -17,6 +17,7 @@ class TweetViewSet(GenericViewSet):
     """
     API endpoint that allows users to create, list tweets
     """
+
     serializer_class = TweetSerializerForCreate
     queryset = Tweet.objects.all()
     pagination_class = EndlessPagination
