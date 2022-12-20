@@ -22,10 +22,13 @@ class Tweet(models.Model):
     )
     content = models.CharField(max_length=255) # CharField 就够了，因为是微博。之前用TextField。
     created_at = models.DateTimeField(auto_now_add=True)
+    # 新增的 field 一定要设置 null=True，否则 default = 0 会遍历整个表单去设置
+    # 导致 Migration 过程非常慢，从而把整张表单锁死，从而正常用户无法创建新的 tweets
+    likes_count = models.IntegerField(default=0, null=True)
+    comments_count = models.IntegerField(default=0, null=True)
 
-    # 联合索引
     class Meta:
-        index_together = (('user', 'created_at'),)
+        index_together = (('user', 'created_at'),) # 联合索引
         ordering = ('user', '-created_at')
 
     def __str__(self):
