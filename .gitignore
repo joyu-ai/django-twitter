@@ -2,10 +2,16 @@
 .DS_Store
 .idea/
 media/
-
 *.box
 .vagrant
 Vagrantfile
+hbase-2.4.15-bin.tar.gz
+hbase-2.4.15/
+jdk-8u351-linux-x64.tar.gz
+thrift-0.14.1.tar.gz
+thrift-0.14.1/
+boost_1_60_0/
+mysql-apt-config_0.8.15-1_all.deb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
