@@ -2,6 +2,8 @@ from dateutil import parser
 from django.conf import settings
 from rest_framework.pagination import BasePagination
 from rest_framework.response import Response
+from utils.time_constants import MAX_TIMESTAMP
+
 
 class EndlessPagination(BasePagination):
     page_size = 20 if not settings.TESTING else 10
@@ -81,3 +83,48 @@ class EndlessPagination(BasePagination):
             'has_next_page': self.has_next_page,
             'results': data,
         })
+
+    def paginate_hbase(self, hb_model, row_key_prefix, request):
+        if 'created_at__gt' in request.query_params:
+            # created_at__gt 用于下拉刷新的时候加载最新的内容进来
+            # 为了简便起见，下拉刷新不做翻页机制，直接加载所有更新的数据
+            # 因为如果数据很久没有更新的话，不会采用下拉刷新的方式进行更新，而是重新加载最新的数据
+            created_at__gt = request.query_params['created_at__gt']
+            start = (*row_key_prefix, created_at__gt)
+            stop = (*row_key_prefix, MAX_TIMESTAMP)
+            objects = hb_model.filter(start=start, stop=stop)
+            if len(objects) and objects[0].created_at == int(created_at__gt):
+                objects = objects[:0:-1]
+            else:
+                objects = objects[::-1]
+            self.has_next_page = False
+            return objects
+
+        if 'created_at__lt' in request.query_params:
+            # created_at__lt 用于向上滚屏（往下翻页）的时候加载下一页的数据
+            # 寻找 timestamp < created_at__lt 的 objects 里按照 timestamp 倒序的前 page_size + 1 个 objects
+            # 比如目前的 timestamp 列表是 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 如果 created_at__lt=5, page_size = 2
+            # 则应该返回 [4, 3, 2]，多返回一个 object 的原因是为了判断是否还有下一页从而减少一次空加载。
+            # 由于 hbase 只支持 <= 的查询而不支持 <, 因此我们还需要再多取一个 item 保证 < 的 item 有 page_size + 1 个
+            created_at__lt = request.query_params['created_at__lt']
+            start = (*row_key_prefix, created_at__lt)
+            stop = (*row_key_prefix, None)
+            objects = hb_model.filter(start=start, stop=stop, limit=self.page_size + 2, reverse=True)
+            if len(objects) and objects[0].created_at == int(created_at__lt):
+                objects = objects[1:]
+            if len(objects) > self.page_size:
+                self.has_next_page = True
+                objects = objects[:-1]
+            else:
+                self.has_next_page = False
+            return objects
+
+        # 没有任何参数，默认加载最新的一页
+        prefix = (*row_key_prefix, None)
+        objects = hb_model.filter(prefix=prefix, limit=self.page_size + 1, reverse=True)
+        if len(objects) > self.page_size:
+            self.has_next_page = True
+            objects = objects[:-1]
+        else:
+            self.has_next_page = False
+        return objects

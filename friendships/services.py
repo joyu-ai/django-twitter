@@ -19,17 +19,16 @@ class FriendshipService(object):
 
     @classmethod
     def get_following_user_id_set(cls, from_user_id):
-        key = FOLLOWINGS_PATTERN.format(user_id=from_user_id)
-        user_id_set = cache.get(key)
-        if user_id_set is not None:
-            return user_id_set
+        # <TODO> cache in redis set
+        if not GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            friendships = Friendship.objects.filter(from_user_id=from_user_id)
+        else:
+            friendships = HBaseFollowing.filter(prefix=(from_user_id, None))
 
-        friendships = Friendship.objects.filter(from_user_id=from_user_id)
         user_id_set = set([
             fs.to_user_id
             for fs in friendships
         ])
-        cache.set(key, user_id_set)
         return user_id_set
 
     @classmethod
@@ -61,3 +60,52 @@ class FriendshipService(object):
             to_user_id=to_user_id,
             created_at=now,
         )
+
+    @classmethod
+    def unfollow(cls, from_user_id, to_user_id):
+        if from_user_id == to_user_id:
+            return 0
+
+        if not GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            deleted, _ = Friendship.objects.filter(
+                from_user_id=from_user_id,
+                to_user_id=to_user_id,
+            ).delete()
+            return deleted
+
+        instance = cls.get_follow_instance(from_user_id, to_user_id)
+        if instance is None:
+            return 0
+
+        HBaseFollowing.delete(from_user_id=from_user_id, created_at=instance.created_at)
+        HBaseFollower.delete(to_user_id=to_user_id, created_at=instance.created_at)
+        return 1
+
+    @classmethod
+    def get_follow_instance(cls, from_user_id, to_user_id):
+        followings = HBaseFollowing.filter(prefix=(from_user_id, None))
+        for follow in followings:
+            if follow.to_user_id == to_user_id:
+                return follow
+        return None
+
+    @classmethod
+    def has_followed(cls, from_user_id, to_user_id):
+        if from_user_id == to_user_id:
+            return False
+
+        if not GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            return Friendship.objects.filter(
+                from_user_id=from_user_id,
+                to_user_id=to_user_id,
+            ).exists()
+
+        instance = cls.get_follow_instance(from_user_id, to_user_id)
+        return instance is not None
+
+    @classmethod
+    def get_following_count(cls, from_user_id):
+        if not GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            return Friendship.objects.filter(from_user_id=from_user_id).count()
+        followings = HBaseFollowing.filter(prefix=(from_user_id,))
+        return len(followings)
