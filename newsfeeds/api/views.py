@@ -1,6 +1,7 @@
 from django.utils.decorators import method_decorator
+from gatekeeper.models import GateKeeper
 from newsfeeds.api.serializers import NewsFeedSerializer
-from newsfeeds.models import NewsFeed
+from newsfeeds.models import NewsFeed, HBaseNewsFeed
 from newsfeeds.services import NewsFeedService
 from ratelimit.decorators import ratelimit
 from rest_framework import viewsets
@@ -23,24 +24,20 @@ class NewsFeedViewSet(viewsets.GenericViewSet):
     def list(self, request):
         cached_newsfeeds = NewsFeedService.get_cached_newsfeeds(request.user.id)
         page = self.paginator.paginate_cached_list(cached_newsfeeds, request)
-        # page 是 None 代表我现在请求的数据可能不在 cache 里，需要直接去 db 来获取
         if page is None:
-            queryset = NewsFeed.objects.filter(user=request.user)
-            page = self.paginate_queryset(queryset)
+            if GateKeeper.is_switch_on('switch_newsfeed_to_hbase'):
+                page = self.paginator.paginate_hbase(
+                    HBaseNewsFeed,
+                    (request.user.id,),
+                    request,
+                )
+            else:
+                queryset = NewsFeed.objects.filter(user=request.user)
+                page = self.paginate_queryset(queryset)
+
         serializer = NewsFeedSerializer(
             page,
             context={'request': request},
             many=True,
         )
         return self.get_paginated_response(serializer.data)
-
-    # 12 - 26 行也可以合并成如下：
-    # def list(self, request):
-    #     queryset = NewsFeed.objects.filter(user=self.request.user)
-    #     page = self.paginated_queryset(queryset)
-    #     serializer = NewsFeedSerializer(
-    #         page,
-    #         context={'request': request},
-    #         many=True,
-    #     )
-    #     return self.get_paginated_response(serializer.data)
