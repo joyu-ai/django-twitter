@@ -127,14 +127,15 @@ class HBaseModel:
             row_data[column_key] = cls.serialize_field(field, column_value)
         return row_data
 
-    def save(self):
+    def save(self, batch=None):
         row_data = self.serialize_row_data(self.__dict__)
-        # 如果 row_data 为空，即没有任何 column key values 需要存储 hbase 会直接不存储
-        # 这个 row_key, 因此我们可以 raise 一个 exception 提醒调用者，避免存储空值
         if len(row_data) == 0:
             raise EmptyColumnError()
-        table = self.get_table()
-        table.put(self.row_key, row_data)
+        if batch:
+            batch.put(self.row_key, row_data)
+        else:
+            table = self.get_table()
+            table.put(self.row_key, row_data)
 
     @classmethod
     def get(cls, **kwargs):
@@ -144,10 +145,20 @@ class HBaseModel:
         return cls.init_from_row(row_key, row_data)
 
     @classmethod
-    def create(cls, **kwargs):
+    def create(cls, batch=None, **kwargs):
         instance = cls(**kwargs)
-        instance.save()
+        instance.save(batch=batch)
         return instance
+
+    @classmethod
+    def batch_create(cls, batch_data):
+        table = cls.get_table()
+        batch = table.batch()
+        results = []
+        for data in batch_data:
+            results.append(cls.create(batch=batch, **data))
+        batch.send()
+        return results
 
     @classmethod
     def get_table_name(cls):

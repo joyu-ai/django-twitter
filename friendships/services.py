@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.cache import caches
-from friendships.hbase_models import HBaseFollowing, HBaseFollower
-from friendships.models import Friendship
+from friendships.models import Friendship, HBaseFollowing, HBaseFollower
 from gatekeeper.models import GateKeeper
 from twitter.cache import FOLLOWINGS_PATTERN
 
@@ -14,7 +13,10 @@ class FriendshipService(object):
 
     @classmethod
     def get_follower_ids(cls, to_user_id):
-        friendships = Friendship.objects.filter(to_user_id=to_user_id)
+        if not GateKeeper.is_switch_on('switch_friendship_to_hbase'):
+            friendships = Friendship.objects.filter(to_user_id=to_user_id)
+        else:
+            friendships = HBaseFollower.filter(prefix=(to_user_id,))
         return [friendship.from_user_id for friendship in friendships]
 
     @classmethod

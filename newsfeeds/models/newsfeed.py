@@ -1,3 +1,7 @@
+"""
+Deprecated
+use newsfeeds.hbase_models.HBaseNewsFeed instead
+"""
 from django.contrib.auth.models import User # we use django model for user api
 from django.db import models
 from django.db.models.signals import post_save

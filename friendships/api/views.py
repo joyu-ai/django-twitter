@@ -1,12 +1,11 @@
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
-from friendships.api.paginations import FriendshipPagination
 from friendships.api.serializers import (
     FollowingSerializer,
     FollowerSerializer,
     FriendshipSerializerForCreate,
 )
-from friendships.hbase_models import HBaseFollowing, HBaseFollower
+from friendships.models import HBaseFollowing, HBaseFollower
 from friendships.models import Friendship
 from friendships.services import FriendshipService
 from gatekeeper.models import GateKeeper
