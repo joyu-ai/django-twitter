@@ -1,5 +1,6 @@
 from django.conf import settings
-from newsfeeds.models import NewsFeed
+from gatekeeper.models import GateKeeper
+from newsfeeds.models import NewsFeed, HBaseNewsFeed
 from newsfeeds.services import NewsFeedService
 from rest_framework.test import APIClient
 from testing.testcases import TestCase
@@ -69,12 +70,13 @@ class NewsFeedApiTests(TestCase):
         # pull the first page
         response = self.linghu_client.get(NEWSFEEDS_URL)
         self.assertEqual(response.data['has_next_page'], True)
-        self.assertEqual(len(response.data['results']), page_size)
-        self.assertEqual(response.data['results'][0]['id'], newsfeeds[0].id)
-        self.assertEqual(response.data['results'][1]['id'], newsfeeds[1].id)
+        results = response.data['results']
+        self.assertEqual(len(results), page_size)
+        self.assertEqual(results[0]['created_at'], newsfeeds[0].created_at)
+        self.assertEqual(results[1]['created_at'], newsfeeds[1].created_at)
         self.assertEqual(
-            response.data['results'][page_size - 1]['id'],
-            newsfeeds[page_size - 1].id,
+            results[page_size - 1]['created_at'],
+            newsfeeds[page_size - 1].created_at,
         )
 
         # pull the second page
@@ -85,14 +87,14 @@ class NewsFeedApiTests(TestCase):
         self.assertEqual(response.data['has_next_page'], False)
         results = response.data['results']
         self.assertEqual(len(results), page_size)
-        self.assertEqual(results[0]['id'], newsfeeds[page_size].id)
-        self.assertEqual(results[1]['id'], newsfeeds[page_size + 1].id)
+        self.assertEqual(results[0]['created_at'], newsfeeds[page_size].created_at)
+        self.assertEqual(results[1]['created_at'], newsfeeds[page_size + 1].created_at)
         self.assertEqual(
-            results[page_size - 1]['id'],
-            newsfeeds[2 * page_size - 1].id,
+            results[page_size - 1]['created_at'],
+            newsfeeds[2 * page_size - 1].created_at,
         )
 
-        # pull latest newsfeeds
+        # pull the latest newsfeeds
         response = self.linghu_client.get(
             NEWSFEEDS_URL,
             {'created_at__gt': newsfeeds[0].created_at},
@@ -109,7 +111,7 @@ class NewsFeedApiTests(TestCase):
         )
         self.assertEqual(response.data['has_next_page'], False)
         self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['id'], new_newsfeed.id)
+        self.assertEqual(response.data['results'][0]['created_at'], new_newsfeed.created_at)
 
     def test_user_cache(self):
         profile = self.dongxie.profile
@@ -183,13 +185,16 @@ class NewsFeedApiTests(TestCase):
         # only cached list_limit objects
         cached_newsfeeds = NewsFeedService.get_cached_newsfeeds(self.linghu.id)
         self.assertEqual(len(cached_newsfeeds), list_limit)
-        queryset = NewsFeed.objects.filter(user=self.linghu)
-        self.assertEqual(queryset.count(), list_limit + page_size)
+        # if GateKeeper.is_switch_on('switch_newsfeed_to_hbase'):
+        #     count = len(HBaseNewsFeed.filter(prefix=(self.linghu.id, None)))
+        # else:
+        #     count = NewsFeed.objects.filter(user=self.linghu).count()
+        self.assertEqual(NewsFeedService.count(self.linghu.id), list_limit + page_size)
 
         results = self._paginate_to_get_newsfeeds(self.linghu_client)
         self.assertEqual(len(results), list_limit + page_size)
         for i in range(list_limit + page_size):
-            self.assertEqual(newsfeeds[i].id, results[i]['id'])
+            self.assertEqual(newsfeeds[i].created_at, results[i]['created_at'])
 
         # a followed user create a new tweet
         self.create_friendship(self.linghu, self.dongxie)
@@ -201,7 +206,7 @@ class NewsFeedApiTests(TestCase):
             self.assertEqual(len(results), list_limit + page_size + 1)
             self.assertEqual(results[0]['tweet']['id'], new_tweet.id)
             for i in range(list_limit + page_size):
-                self.assertEqual(newsfeeds[i].id, results[i + 1]['id'])
+                self.assertEqual(newsfeeds[i].created_at, results[i + 1]['created_at'])
 
         _test_newsfeeds_after_new_feed_pushed()
 
